@@ -17,7 +17,7 @@ import java.io.Serializable;
 @NoArgsConstructor
 public class ValidateBeerOrderRequest implements Serializable {
 
-    static final long serialVersionUID = -5781515597148163111L;
+    private static final long serialVersionUID = -5781515597148163111L;
 
     private BeerOrderDto beerOrderDto;
 }
