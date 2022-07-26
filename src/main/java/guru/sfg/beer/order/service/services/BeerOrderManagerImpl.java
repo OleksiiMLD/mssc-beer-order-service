@@ -14,6 +14,8 @@ import org.springframework.statemachine.support.DefaultStateMachineContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 /**
  * Created by jt on 11/29/19.
  */
@@ -62,5 +64,19 @@ public class BeerOrderManagerImpl implements BeerOrderManager {
         sm.start();
 
         return sm;
+    }
+
+    @Transactional
+    @Override
+    public void approveBeerOrder(UUID orderId) {
+        BeerOrder beerOrder = beerOrderRepository.getOne(orderId);
+        sendBeerOrderEvent(beerOrder, BeerOrderEventEnum.VALIDATION_PASSED);
+    }
+
+    @Transactional
+    @Override
+    public void rejectBeerOrder(UUID orderId) {
+        BeerOrder beerOrder = beerOrderRepository.getOne(orderId);
+        sendBeerOrderEvent(beerOrder, BeerOrderEventEnum.VALIDATION_FAILED);
     }
 }
