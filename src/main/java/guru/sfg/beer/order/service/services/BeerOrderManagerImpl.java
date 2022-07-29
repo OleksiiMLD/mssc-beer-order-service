@@ -5,6 +5,7 @@ import guru.sfg.beer.order.service.domain.BeerOrderEventEnum;
 import guru.sfg.beer.order.service.domain.BeerOrderStatusEnum;
 import guru.sfg.beer.order.service.repositories.BeerOrderRepository;
 import guru.sfg.beer.order.service.sm.BeerOrderStateChangeInterceptor;
+import guru.sfg.brewery.model.BeerOrderDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
@@ -54,6 +55,37 @@ public class BeerOrderManagerImpl implements BeerOrderManager {
         } else {
             sendBeerOrderEvent(beerOrder, BeerOrderEventEnum.VALIDATION_FAILED);
         }
+    }
+
+    @Override
+    public void processAllocationFailure(UUID beerId) {
+        BeerOrder beerOrder = beerOrderRepository.getOne(beerId);
+        sendBeerOrderEvent(beerOrder, BeerOrderEventEnum.ALLOCATION_FAILED);
+    }
+
+    @Transactional
+    @Override
+    public void processAllocationResult(BeerOrderDto beerOrderDto, Boolean isPendingInventory) {
+        BeerOrder beerOrder = beerOrderRepository.getOne(beerOrderDto.getId());
+
+        BeerOrderEventEnum event = Boolean.TRUE.equals(isPendingInventory) ?
+                BeerOrderEventEnum.ALLOCATION_NO_INVENTORY : BeerOrderEventEnum.ALLOCATION_SUCCESS;
+        sendBeerOrderEvent(beerOrder, event);
+        updateAllocatedQuantity(beerOrderDto);
+    }
+
+    private void updateAllocatedQuantity(BeerOrderDto beerOrderDto) {
+        BeerOrder beerOrder = beerOrderRepository.getOne(beerOrderDto.getId());
+
+        beerOrder.getBeerOrderLines().forEach(
+                line -> line.setQuantityAllocated(beerOrderDto.getBeerOrderLines().stream()
+                        .filter(dtoLine -> dtoLine.getId().equals(line.getId()))
+                        .findAny().orElseThrow(() -> new IllegalArgumentException("BeerOrderLine with id: " + line.getId() +
+                                " for Order with id: " + beerOrder.getId() + " not processed."))
+                        .getOrderQuantity())
+        );
+
+        beerOrderRepository.saveAndFlush(beerOrder);
     }
 
     private void sendBeerOrderEvent(BeerOrder beerOrder, BeerOrderEventEnum eventEnum){
