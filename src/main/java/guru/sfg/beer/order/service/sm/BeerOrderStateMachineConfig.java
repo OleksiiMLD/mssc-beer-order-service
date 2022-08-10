@@ -22,6 +22,7 @@ public class BeerOrderStateMachineConfig extends StateMachineConfigurerAdapter<B
 
     private final Action<BeerOrderStatusEnum, BeerOrderEventEnum>  validateOrderAction;
     private final Action<BeerOrderStatusEnum, BeerOrderEventEnum>  allocateOrderAction;
+    private final Action<BeerOrderStatusEnum, BeerOrderEventEnum>  pickUpOrderAction;
 
     @Override
     public void configure(StateMachineStateConfigurer<BeerOrderStatusEnum, BeerOrderEventEnum> states) throws Exception {
@@ -59,10 +60,17 @@ public class BeerOrderStateMachineConfig extends StateMachineConfigurerAdapter<B
                 .event(BeerOrderEventEnum.ALLOCATION_FAILED)
             .and().withExternal()
                 .source(BeerOrderStatusEnum.ALLOCATION_PENDING).target(BeerOrderStatusEnum.PENDING_INVENTORY)
-                .event(BeerOrderEventEnum.ALLOCATION_NO_INVENTORY);
-
-
-
-
+                .event(BeerOrderEventEnum.ALLOCATION_NO_INVENTORY)
+            .and().withExternal()
+                .source(BeerOrderStatusEnum.ALLOCATED).target(BeerOrderStatusEnum.PICKED_UP)
+                .event(BeerOrderEventEnum.BEERORDER_PICKED_UP)
+                .action(pickUpOrderAction)
+            .and().withExternal()
+                .source(BeerOrderStatusEnum.PICKED_UP).target(BeerOrderStatusEnum.DELIVERED)
+                .event(BeerOrderEventEnum.ORDER_DELIVERED)
+            .and().withExternal()
+                .source(BeerOrderStatusEnum.PICKED_UP).target(BeerOrderStatusEnum.DELIVERY_EXCEPTION)
+                .event(BeerOrderEventEnum.DELIVERY_FAILED)
+        ;
     }
 }
