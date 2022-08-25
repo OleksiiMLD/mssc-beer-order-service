@@ -18,6 +18,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class BeerOrderAllocationListener {
 
+    public static final String PENDING_ALLOCATION = "pending-allocation";
+
     private final JmsTemplate jmsTemplate;
 
     @JmsListener(destination = JmsConfig.ALLOCATE_ORDER_QUEUE)
@@ -26,6 +28,9 @@ public class BeerOrderAllocationListener {
         boolean pendingInventory = false;
         boolean allocationError = false;
 
+        if (PENDING_ALLOCATION.equals(request.getBeerOrderDto().getCustomerRef())) {
+            return;
+        }
         //set pending inventory
         if (request.getBeerOrderDto().getCustomerRef() != null && request.getBeerOrderDto().getCustomerRef().equals("partial-allocation")){
             pendingInventory = true;

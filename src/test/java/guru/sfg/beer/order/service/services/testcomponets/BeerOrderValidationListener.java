@@ -17,6 +17,9 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 @Component
 public class BeerOrderValidationListener {
+
+    public static final String PENDING_VALIDATION = "pending-validation";
+
     private final JmsTemplate jmsTemplate;
 
     @JmsListener(destination = JmsConfig.VALIDATE_ORDER_QUEUE)
@@ -24,6 +27,10 @@ public class BeerOrderValidationListener {
         boolean isValid = true;
 
         ValidateOrderRequest request = (ValidateOrderRequest) msg.getPayload();
+
+        if (PENDING_VALIDATION.equals(request.getBeerOrder().getCustomerRef())) {
+            return;
+        }
 
         //condition to fail validation
         if (request.getBeerOrder().getCustomerRef() != null && request.getBeerOrder().getCustomerRef().equals("fail-validation")){
